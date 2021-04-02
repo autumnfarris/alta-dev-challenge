@@ -19,9 +19,16 @@ const map = new mapboxgl.Map({
 map.addControl(
   new MapBoxGeocoder({
     accessToken: mapboxgl.accessToken,
-    mapboxgl: mapboxgl
+    mapboxgl: mapboxgl,
+    localGeocoder: forwardGeocoder,
+    placeholder: 'Enter search e.g. Alta'
   })
 );
+
+map.addControl(
+  new mapboxgl.NavigationControl()
+);
+
 
 map.on("load", () => {
   map.addSource("mapbox-traffic", {
@@ -54,3 +61,60 @@ map.on("load", () => {
     },
   });
 });
+
+map.on('load', function () {
+        map.addSource('contours', {
+            type: 'vector',
+            url: 'mapbox://mapbox.mapbox-terrain-v2'
+        });
+        map.addLayer({
+            'id': 'contours',
+            'type': 'line',
+            'source': 'contours',
+            'source-layer': 'contour',
+            'layout': {
+                'visibility': 'visible',
+                'line-join': 'round',
+                'line-cap': 'round'
+            },
+            'paint': {
+                'line-color': '#877b59',
+                'line-width': 1
+            }
+        });
+    });
+
+    var customData = {
+      'features': [
+        {
+          'type': 'Feature',
+          'properties': {
+          'title': 'Alta - Moving Forward!'
+        },
+      'geometry': {
+      'coordinates': [-122.66089, 45.51774],
+      'type': 'Point'
+      }
+    }
+  ],
+      'type': 'FeatureCollection'
+};
+
+function forwardGeocoder(query) {
+    var matchingFeatures = [];
+    for (var i = 0; i < customData.features.length; i++) {
+    var feature = customData.features[i];
+    if (
+      feature.properties.title
+      .toLowerCase()
+      .search(query.toLowerCase()) !== -1
+    ) {
+
+      feature['place_name'] = '🚲 ' + feature.properties.title;
+      feature['center'] = feature.geometry.coordinates;
+      feature['place_type'] = ['alta'];
+      matchingFeatures.push(feature);
+    }
+  }
+return matchingFeatures;
+}
